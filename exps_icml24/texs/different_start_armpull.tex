@@ -1,0 +1,115 @@
+% This file was created with tikzplotlib v0.10.1.
+\begin{tikzpicture}[
+every node/.append style={font=\Large}
+]
+
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{dodgerblue58134255}{RGB}{58,134,255}
+\definecolor{firebrick1931831}{RGB}{193,18,31}
+\definecolor{lightgray204}{RGB}{204,204,204}
+
+\begin{axis}[
+legend cell align={left},
+legend style={
+  fill opacity=0.8,
+  draw opacity=1,
+  text opacity=1,
+  at={(0.91,0.5)},
+  anchor=east,
+  draw=lightgray204
+},
+tick align=outside,
+tick pos=left,
+title={Arm Pulls},
+x grid style={darkgray176},
+xlabel={Attack Start Time \(\displaystyle t^A\)},
+xmajorgrids,
+xmin=-45, xmax=945,
+xtick style={color=black},
+y grid style={darkgray176},
+ylabel={Times Pulled Target},
+ymajorgrids,
+ymin=-46.7, ymax=1046.7,
+ytick style={color=black}
+]
+\path [draw=firebrick1931831, fill=firebrick1931831, opacity=0.1]
+(axis cs:0,880.828848464784)
+--(axis cs:0,877.704484868549)
+--(axis cs:100,241.99764615271)
+--(axis cs:200,70.8862163689252)
+--(axis cs:300,29.9259112876782)
+--(axis cs:400,15.9613026728447)
+--(axis cs:500,10.0947697305089)
+--(axis cs:600,7)
+--(axis cs:700,5)
+--(axis cs:800,4)
+--(axis cs:900,3)
+--(axis cs:900,3)
+--(axis cs:900,3)
+--(axis cs:800,4)
+--(axis cs:700,5)
+--(axis cs:600,7)
+--(axis cs:500,10.5718969361578)
+--(axis cs:400,16.3053639938219)
+--(axis cs:300,30.4740887123218)
+--(axis cs:200,72.0471169644081)
+--(axis cs:100,244.135687180623)
+--(axis cs:0,880.828848464784)
+--cycle;
+
+\path [draw=dodgerblue58134255, fill=dodgerblue58134255, opacity=0.1]
+(axis cs:0,122.295515131451)
+--(axis cs:0,119.171151535216)
+--(axis cs:100,755.864312819377)
+--(axis cs:200,927.952883035592)
+--(axis cs:300,969.525911287678)
+--(axis cs:400,983.694636006178)
+--(axis cs:500,989.428103063842)
+--(axis cs:600,993)
+--(axis cs:700,995)
+--(axis cs:800,996)
+--(axis cs:900,997)
+--(axis cs:900,997)
+--(axis cs:900,997)
+--(axis cs:800,996)
+--(axis cs:700,995)
+--(axis cs:600,993)
+--(axis cs:500,989.905230269491)
+--(axis cs:400,984.038697327155)
+--(axis cs:300,970.074088712322)
+--(axis cs:200,929.113783631075)
+--(axis cs:100,758.00235384729)
+--(axis cs:0,122.295515131451)
+--cycle;
+
+\addplot [line width=1pt, firebrick1931831, mark=asterisk, mark size=3, mark repeat=1, mark options={solid}]
+table {%
+0 879.266666666667
+100 243.066666666667
+200 71.4666666666667
+300 30.2
+400 16.1333333333333
+500 10.3333333333333
+600 7
+700 5
+800 4
+900 3
+};
+\addlegendentry{Target arm}
+\addplot [line width=1pt, dodgerblue58134255, mark=triangle*, mark size=3, mark repeat=1, mark options={solid,rotate=180}]
+table {%
+0 120.733333333333
+100 756.933333333333
+200 928.533333333333
+300 969.8
+400 983.866666666667
+500 989.666666666667
+600 993
+700 995
+800 996
+900 997
+};
+\addlegendentry{Optimal arm}
+\end{axis}
+
+\end{tikzpicture}

@@ -6,14 +6,14 @@ from tqdm import tqdm
 from utils import *
 from config import *
 
-arms = [1,0]
+arms = [1, 0]
 n_arms = len(arms)
-var = (.1)**2
+var = (0.1) ** 2
 opt_arm = np.max(arms)
 
 # attack
 target = np.argmin(arms)
-delta = .025
+delta = 0.025
 
 
 att_experiments_rewards = np.zeros((E, T))
@@ -37,19 +37,18 @@ for e in tqdm(range(E)):
 
     # baselines attacked
     att = mablib.EpsilonGreedy(n_arms)
-    
+
     # attacks
     attacker = mablib.EpsilonGreedyAttacker(n_arms, target, var, delta)
-    
+
     for t in range(T):
-    
-        att_arm = target if t==0 else att.pull_arm()
+        att_arm = target if t == 0 else att.pull_arm()
         egl_arm = egl.pull_arm()
         ucb_arm = ucb.pull_arm()
 
-        att_arms_pulled[e, att_arm] += 1 
-        egl_arms_pulled[e, egl_arm] += 1 
-        ucb_arms_pulled[e, ucb_arm] += 1 
+        att_arms_pulled[e, att_arm] += 1
+        egl_arms_pulled[e, egl_arm] += 1
+        ucb_arms_pulled[e, ucb_arm] += 1
 
         att_reward = np.random.normal(arms[att_arm], var)
         egl_reward = np.random.normal(arms[egl_arm], var)
@@ -80,7 +79,7 @@ fig_rewards = plt.figure()
 fig_attacks = plt.figure()
 fig_armpull = plt.figure()
 
-os.makedirs('imgs', exist_ok=True)
+os.makedirs("imgs", exist_ok=True)
 
 # ----- Regrets -----
 ax1 = fig_regrets.add_subplot(111)
@@ -96,9 +95,24 @@ fig_regrets.savefig("imgs/jun_regrets")
 
 # ----- Rewards -----
 ax2 = fig_rewards.add_subplot(111)
-ax2.plot(x, np.mean(np.cumsum(att_experiments_rewards, axis=1), axis=0),color=JUN_EGL_COLOR, label=JUN_EGL_LABEL)
-ax2.plot(x, np.mean(np.cumsum(egl_experiments_rewards, axis=1), axis=0),color=EGL_COLOR, label=EGL_LABEL)
-ax2.plot(x, np.mean(np.cumsum(ucb_experiments_rewards, axis=1), axis=0),color=UCB_COLOR, label=UCB_LABEL)
+ax2.plot(
+    x,
+    np.mean(np.cumsum(att_experiments_rewards, axis=1), axis=0),
+    color=JUN_EGL_COLOR,
+    label=JUN_EGL_LABEL,
+)
+ax2.plot(
+    x,
+    np.mean(np.cumsum(egl_experiments_rewards, axis=1), axis=0),
+    color=EGL_COLOR,
+    label=EGL_LABEL,
+)
+ax2.plot(
+    x,
+    np.mean(np.cumsum(ucb_experiments_rewards, axis=1), axis=0),
+    color=UCB_COLOR,
+    label=UCB_LABEL,
+)
 ax2.legend()
 ax2.set_title("Cumulative Rewards")
 ax2.set_xlabel("t")
@@ -107,13 +121,18 @@ fig_rewards.savefig("imgs/jun_rewards")
 
 # ----- Attack cost -----
 ax3 = fig_attacks.add_subplot(111)
-ax3.plot(x, np.mean(np.cumsum(att_experiments_attacks, axis=1), axis=0),label='attack cost on e-greedy', color=JUN_EGL_COLOR)
+ax3.plot(
+    x,
+    np.mean(np.cumsum(att_experiments_attacks, axis=1), axis=0),
+    label="attack cost on e-greedy",
+    color=JUN_EGL_COLOR,
+)
 ax3.legend()
 ax3.set_title("Cumulative Attack Cost")
 ax3.set_xlabel("t")
 ax3.set_ylabel("Attack cost")
-#ax3.set_xscale('log')
-fig_attacks.savefig('imgs/jun_attacks_cost')
+# ax3.set_xscale('log')
+fig_attacks.savefig("imgs/jun_attacks_cost")
 
 
 # ----- Arms Pulled -----
@@ -128,12 +147,14 @@ colors = [
     EGL_COLOR,
     UCB_COLOR,
 ]
-bar_plot(ax4, data, colors=colors, total_width=.8, single_width=.9)
-ax4.set_yscale('log')
+bar_plot(ax4, data, colors=colors, total_width=0.8, single_width=0.9)
+ax4.set_yscale("log")
 ax4.set_title("Arm pulls")
 ax4.set_xlabel("Arms")
 ax4.set_ylabel("Times Pulled")
 ax4.set_xticks([*range(n_arms)])
-ax4.set_xticklabels([f'arm {a}' if a != target else f'arm {a} (target)' for a in range(n_arms)])
+ax4.set_xticklabels(
+    [f"arm {a}" if a != target else f"arm {a} (target)" for a in range(n_arms)]
+)
 fig_armpull.savefig("imgs/jun_arm_pulls")
 plt.show()
