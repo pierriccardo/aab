@@ -6,13 +6,24 @@
     source .venv/bin/activate
     pip install -r requirements.py
 
-To run experiments:
+# Repository structure
+.
+├── libmab
+│   ├── attackers.py
+│   ├── envs
+│   │   ├── combinatorial.py:
+│   │   └── stochastic.py
+│   ├── learners.py
+│   ├── utils.py
+│   └── visualization.py
+├── LICENSE
+├── README.md
+└── requirements.txt
 
-    python3 jun_comparison.py
-    python3 liu_comparison.py
-
-Parameters can be adjusted from `config.py` and specific experiment file.
-
-For compatibility with mpl
-
-    pip install tikzplotlib=='0.10.1'
+# TODO
+- [ ] env reward seed for round t
+- [ ] parallel execution
+- [ ] saving experiment
+- [ ] division (stochastic, adversarial)
+- [ ] refactor envs
+- [ ] add adversarial bandits

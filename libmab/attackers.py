@@ -1,12 +1,12 @@
-from libmab.learners import Learner
+from libmab.learners import Learner, CombinatorialLearner
 from abc import abstractclassmethod
 
 import numpy as np
 
 
 class Attacker(Learner):
-    def __init__(self, n_arms, target):
-        super().__init__(n_arms)
+    def __init__(self, n_arms: int, T: int, target: int) -> None:
+        super().__init__(n_arms, T)
         self.target = target
 
     @abstractclassmethod
@@ -15,10 +15,12 @@ class Attacker(Learner):
 
 
 class EpsilonGreedyAttacker(Attacker):
-    def __init__(self, n_arms, target, var, delta=0.1):
-        super().__init__(n_arms, target, var, delta)
+    def __init__(self, n_arms: int, T: int, target: int, var: float = 1, delta: float = 0.05) -> None:
+        super().__init__(n_arms, T, target)
+        self.var = var
+        self.delta = delta
 
-    def attack(self, reward, arm):
+    def attack(self, reward: float, arm: int) -> float:
         mu_i_old = self.estimates[arm]
         N_i_old = self.arm_pulls[arm]
         self.update(reward, arm)
@@ -45,16 +47,18 @@ class ACEAttacker(Attacker):
     """Adaptive attack by Constant Estimation (ACE)
     paper: http://arxiv.org/abs/1905.06494
     """
-    def __init__(self, n_arms, target, var, delta=0.05):
-        super().__init__(n_arms, target)
+    def __init__(self, n_arms: int, T: int, target: int, var: float = 1.0, delta=0.05):
+        super().__init__(n_arms, T, target)
         self.var = var  # variance
         self.delta = delta  # high-prob. delta
 
-    def beta(self, arm_pulls) -> float:
+    def beta(self, arm_pulls: int) -> float:
         return np.sqrt((2 * self.var / arm_pulls) * np.log(np.pi**2 * self.n_arms * arm_pulls**2 / (3 * self.delta)))
 
     def attack(self, reward, arm):
+        # update inner Learner state
         self.update(reward, arm)
+
         corruption = 0
         if arm != self.target:
             N_i_new = self.arm_pulls[arm]
@@ -67,8 +71,8 @@ class ACEAttacker(Attacker):
 
 
 class UCBJunAttacker(Attacker):
-    def __init__(self, n_arms, target, var, delta=.05, delta0=1):
-        super().__init__(n_arms, target)
+    def __init__(self, n_arms, T: int, target, var, delta=.05, delta0=1):
+        super().__init__(n_arms, T, target)
         self.delta = delta
         self.var = var
         self.delta0 = delta0
@@ -90,16 +94,47 @@ class UCBJunAttacker(Attacker):
         return corruption
 
 
-class OracleAttacker():
+class OracleAttacker(Attacker):
 
-    def __init__(self, n_arms, target, means, epsilon: float = .05):
-        self.n_arms = n_arms
-        self.target = target
+    def __init__(self, n_arms: int, T: int, target: int, means: [float], epsilon: float = .05):
+        super().__init__(n_arms, T, target)
         self.means = means
         self.epsilon = epsilon
 
-    def attack(self, reward, arm) -> float:
+    def attack(self, reward: float, arm: int) -> float:
         if arm == self.target:
             return 0
         corruption = self.means[arm] - self.means[self.target] + self.epsilon
         return corruption
+
+class CombinatorialAttacker(CombinatorialLearner):
+    def __init__(self, n_arms: int, T: int, target: np.ndarray) -> None:
+        super().__init__(n_arms, T)
+        self.target = target
+
+    @abstractclassmethod
+    def attack(self, reward: np.ndarray, arm: np.ndarray) -> np.ndarray:
+        pass
+
+class OracleCombinatorialAttacker(CombinatorialAttacker):
+
+    def __init__(self, n_arms: int, T: int, target: np.ndarray, means: np.ndarray, epsilon: float = .05) -> None:
+        super().__init__(n_arms, T, target)
+        self.means = means
+        self.epsilon = epsilon
+
+        self.lowest_target_mean = np.min(self.means[self.target == 1])
+        self.len_target = len(self.target[self.target == 1])
+        self.gap = self.lowest_target_mean / (self.n_arms - self.len_target + 1)
+
+
+    def attack(self, reward: np.ndarray, arm: np.ndarray) -> np.ndarray:
+        corruption = np.array([self.gap - self.epsilon for _ in range(self.n_arms)])
+        corruption = self.means - corruption
+        # here the ^1 is to negate the target, to attack only arms
+        # that are not in the target arm
+        corruption = corruption * (self.target ^ 1) * arm
+
+        return corruption
+
+

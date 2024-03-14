@@ -1,29 +1,53 @@
-# from libmab.visualization import plotci, bar_plot
-from visualization import plotci, bar_plot
 from tqdm import tqdm
 
 import matplotlib.pylab as pl
 import matplotlib.gridspec as gridspec
 import numpy as np
+import itertools
 import abc
 
+np.set_printoptions(
+    precision=3,
+    suppress=True
+)
 
 class Learner:
     def __init__(self, n_arms: int, T: int) -> None:
+        self.T = T  # time horizon
         self.n_arms = n_arms
-        self.t = 0
+        self.t = 0  # current time
         self.arm_pulls = np.zeros(n_arms)
         self.estimates = np.zeros(n_arms)
-        self.rewards = []
+        self.rewards = np.zeros(T)
 
     def update(self, reward, arm) -> None:
-        self.rewards.append(reward)
-
+        self.rewards[self.t] = reward
         self.estimates[arm] = (self.estimates[arm] * self.arm_pulls[arm] + reward) / (
             self.arm_pulls[arm] + 1
         )
         self.arm_pulls[arm] += 1
         self.t += 1
+
+    def reset(self):
+        self.t = 0
+        self.arm_pulls = np.zeros(self.n_arms)
+        self.estimates = np.zeros(self.n_arms)
+        self.rewards = np.zeros(self.T)
+
+    def get_rewards(self):
+        return self.rewards
+
+    def get_arm_pulls(self):
+        return self.arm_pulls
+
+    def __str__(self) -> str:
+        return f"""
+            Learner: {self.__class__.__name__}
+            T={self.T}, K={self.n_arms}
+            arm_pulls  : {self.arm_pulls}
+            estimates  : {self.estimates}
+            tot reward : {np.sum(self.rewards)}
+        """
 
     @abc.abstractclassmethod
     def pull_arm(self) -> int:
@@ -31,8 +55,8 @@ class Learner:
 
 
 class Greedy(Learner):
-    def __init__(self, n_arms: int) -> None:
-        super().__init__(n_arms)
+    def __init__(self, n_arms: int, T: int) -> None:
+        super().__init__(n_arms, T)
 
     def pull_arm(self) -> int:
         if self.t < self.n_arms:
@@ -42,8 +66,8 @@ class Greedy(Learner):
 
 
 class EpsilonGreedy(Learner):
-    def __init__(self, n_arms: int, epsilon: callable = lambda x: 1 / x):
-        super().__init__(n_arms)
+    def __init__(self, n_arms: int, T: int, epsilon: callable = lambda x: 1 / x):
+        super().__init__(n_arms, T)
         self.epsilon = epsilon
 
     def pull_arm(self) -> int:
@@ -56,24 +80,9 @@ class EpsilonGreedy(Learner):
                 return np.argmax(self.estimates)
 
 
-class UCBClassic(Learner):
-    def __init__(self, n_arms: int, c: int = 2):
-        super().__init__(n_arms)
-        self.c = c
-
-    def pull_arm(self) -> int:
-        if self.t < self.n_arms:
-            return self.t
-        else:
-            exploration = self.c * np.log(self.t) / self.arm_pulls
-            exploration = np.sqrt(exploration)
-            sel = np.add(self.estimates, exploration)
-            return np.argmax(sel)
-
-
 class UCB(Learner):
-    def __init__(self, n_arms: int, sigma: float = 1) -> None:
-        super().__init__(n_arms)
+    def __init__(self, n_arms: int, T: int, sigma: float = 1) -> None:
+        super().__init__(n_arms, T)
         self.sigma = sigma
 
     def pull_arm(self) -> int:
@@ -87,10 +96,111 @@ class UCB(Learner):
             return np.argmax(sel)
 
 
+class CombinatorialLearner(Learner):
+
+    def __init__(self, n_arms: int, T: int, d: int = None) -> None:
+        super().__init__(n_arms, T)
+        self.rewards = np.zeros((T, n_arms))
+        self.d = n_arms if d is None else d
+
+        assert self.d <= n_arms, "d cannot be >= n_arms"
+
+    def update(self, reward: np.array, superarm: np.array) -> None:
+        # reward    shape (n_arms,)
+        # superarm  shape (n_arms,)
+        # superarm is a vector {0, 1}^n_arms
+        self.rewards[self.t, :] = reward
+        self.estimates = (self.estimates * self.arm_pulls + reward) / (
+            self.arm_pulls + superarm
+        )
+        self.estimates[np.isnan(self.estimates)] = 0
+        self.arm_pulls += superarm
+        self.t += 1
+
+    def get_rewards(self) -> np.array:
+        # return reward collected at each timestep
+        # reward for a given timestep is the sum
+        # of rewards for each basic arm
+        return np.sum(self.rewards, axis=1)
+
+    def reset(self):
+        self.t = 0
+        self.arm_pulls = np.zeros(self.n_arms)
+        self.estimates = np.zeros(self.n_arms)
+        self.rewards = np.zeros((self.T, self.n_arms))
+
+    def __str__(self) -> str:
+
+        return f"""
+            Learner: {self.__class__.__name__}
+            T={self.T}, K={self.n_arms}
+            arm_pulls  : {self.arm_pulls}
+            estimates  : {self.estimates}
+            tot reward : {np.sum(self.get_rewards())}
+        """
+
+
+class CUCB(CombinatorialLearner):
+
+    def __init__(self, n_arms: int, T: int, oracle: callable, sigma: float = .1, d: int = None) -> None:
+        super().__init__(n_arms, T, d)
+        self.oracle = oracle
+        self.sigma = sigma
+
+    def pull_arm(self):
+
+        if self.t < self.n_arms:
+            superarm = np.zeros(self.n_arms)
+            indexes = np.random.randint(self.n_arms, size=self.d - 1)
+            superarm[self.t] = 1
+            superarm[indexes] = 1
+            return superarm
+
+        exploration = np.log(self.t) / self.arm_pulls
+        exploration = 3 * self.sigma * np.sqrt(exploration)
+        ucb_arms = np.add(self.estimates, exploration)
+
+        return self.oracle(ucb_arms, self.d)
+
+
+class Fixed(CombinatorialLearner):
+    # TODO: refactor combinatorial class, create abstract
+    # CombinatorialLearner(Learner)
+
+    def __init__(self, n_arms: int, T: int, d: int = None, arm: np.array = None) -> None:
+        super().__init__(n_arms, T, d)
+
+        if arm is None:
+            self.arm = np.zeros(n_arms)
+            self.arm[0] = 1
+        else:
+            self.arm = arm
+
+    def pull_arm(self):
+        return self.arm
+
+
+class CRandom(CombinatorialLearner):
+
+    def __init__(self, n_arms: int, T: int, d: int = None) -> None:
+        super().__init__(n_arms, T, d)
+
+        #  arm instantiated here to avoid re-instatiate it
+        #  on each pull_arm() call
+        self.arm = np.zeros(self.n_arms)
+
+    def pull_arm(self):
+        tmp = np.random.randint(self.n_arms, size=np.random.randint(self.d))
+        self.arm[:] = 0
+        self.arm[tmp] = 1
+        return self.arm
+
+
 if __name__ == "__main__":
-    T = 10000
-    E = 100
-    arms = [0.49, 0.67, 0.35, 0.90]
+    T = 100000
+    E = 10
+    #arms = [0.49, 0.67, 0.35, 0.90]
+    arms = np.random.normal(0, 1, 50)
     n_arms = len(arms)
     var = (1) ** 2
     opt_arm = np.max(arms)
@@ -112,9 +222,9 @@ if __name__ == "__main__":
 
     for e in tqdm(range(E)):
         # baselines
-        grl = Greedy(n_arms)
-        egl = EpsilonGreedy(n_arms)
-        ucb = UCB(n_arms)
+        grl = Greedy(n_arms, T)
+        egl = EpsilonGreedy(n_arms, T)
+        ucb = UCB(n_arms, T)
 
         for t in range(T):
             # arm selection
@@ -162,17 +272,18 @@ if __name__ == "__main__":
     pl.figure()
 
     # ----- Regrets -----
-    ax1 = pl.subplot(gs[0, 0])
-    plotci(ax1, x, E, grl_experiments_regrets, GRL_COLOR, GRL_LABEL)
-    plotci(ax1, x, E, egl_experiments_regrets, EGL_COLOR, EGL_LABEL)
-    plotci(ax1, x, E, ucb_experiments_regrets, UCB_COLOR, UCB_LABEL)
+    ax1 = pl.subplot(gs[0, :])
+    ax1.plot(x, np.mean(np.cumsum(grl_experiments_regrets, axis=1), axis=0), color=GRL_COLOR, label=GRL_LABEL)
+    ax1.plot(x, np.mean(np.cumsum(egl_experiments_regrets, axis=1), axis=0), color=EGL_COLOR, label=EGL_LABEL)
+    ax1.plot(x, np.mean(np.cumsum(ucb_experiments_regrets, axis=1), axis=0), color=UCB_COLOR, label=UCB_LABEL)
     ax1.legend()
     ax1.set_title("Cumulative Regret")
     ax1.set_xlabel("t")
+    ax1.grid(ls="--")
     ax1.set_ylabel("regret")
 
     # ----- Rewards -----
-    ax2 = pl.subplot(gs[0, 1])
+    ax2 = pl.subplot(gs[1, :])
     ax2.plot(
         x,
         np.mean(np.cumsum(grl_experiments_rewards, axis=1), axis=0),
@@ -192,29 +303,8 @@ if __name__ == "__main__":
         label=UCB_LABEL,
     )
     ax2.legend()
-    ax2.set_yscale("log")
     ax2.set_title("Cumulative Rewards")
+    ax2.grid(ls="--")
     ax2.set_xlabel("t")
     ax2.set_ylabel("reward")
-
-    # ----- Arms Pulled -----
-    ax4 = pl.subplot(gs[1, :])
-    data = {
-        "greedy": np.mean(grl_arms_pulled, axis=0),
-        "e-greedy": np.mean(egl_arms_pulled, axis=0),
-        "UCB": np.mean(ucb_arms_pulled, axis=0),
-    }
-    colors = [
-        GRL_COLOR,
-        EGL_COLOR,
-        UCB_COLOR,
-    ]
-    bar_plot(ax4, data, colors=colors, total_width=0.8, single_width=0.9)
-    ax4.set_yscale("log")
-    ax4.set_title("Arm pulls")
-    ax4.set_xlabel("Arms")
-    ax4.set_ylabel("Times Pulled")
-    ax4.set_xticks([*range(n_arms)])
-    ax4.set_xticklabels([f"arm {a}" for a in range(n_arms)])
-
     pl.show()
