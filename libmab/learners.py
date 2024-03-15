@@ -6,10 +6,8 @@ import numpy as np
 import itertools
 import abc
 
-np.set_printoptions(
-    precision=3,
-    suppress=True
-)
+np.set_printoptions(precision=3, suppress=True)
+
 
 class Learner:
     def __init__(self, n_arms: int, T: int) -> None:
@@ -89,7 +87,7 @@ class UCB(Learner):
         if self.t < self.n_arms:
             return self.t
         else:
-            #exploration = np.log(10**5) / self.arm_pulls
+            # exploration = np.log(10**5) / self.arm_pulls
             exploration = np.log(self.t) / self.arm_pulls
             exploration = 3 * self.sigma * np.sqrt(exploration)
             sel = np.add(self.estimates, exploration)
@@ -97,7 +95,6 @@ class UCB(Learner):
 
 
 class CombinatorialLearner(Learner):
-
     def __init__(self, n_arms: int, T: int, d: int = None) -> None:
         super().__init__(n_arms, T)
         self.rewards = np.zeros((T, n_arms))
@@ -130,7 +127,6 @@ class CombinatorialLearner(Learner):
         self.rewards = np.zeros((self.T, self.n_arms))
 
     def __str__(self) -> str:
-
         return f"""
             Learner: {self.__class__.__name__}
             T={self.T}, K={self.n_arms}
@@ -141,14 +137,14 @@ class CombinatorialLearner(Learner):
 
 
 class CUCB(CombinatorialLearner):
-
-    def __init__(self, n_arms: int, T: int, oracle: callable, sigma: float = .1, d: int = None) -> None:
+    def __init__(
+        self, n_arms: int, T: int, oracle: callable, sigma: float = 0.1, d: int = None
+    ) -> None:
         super().__init__(n_arms, T, d)
         self.oracle = oracle
         self.sigma = sigma
 
     def pull_arm(self):
-
         if self.t < self.n_arms:
             superarm = np.zeros(self.n_arms)
             indexes = np.random.randint(self.n_arms, size=self.d - 1)
@@ -167,7 +163,9 @@ class Fixed(CombinatorialLearner):
     # TODO: refactor combinatorial class, create abstract
     # CombinatorialLearner(Learner)
 
-    def __init__(self, n_arms: int, T: int, d: int = None, arm: np.array = None) -> None:
+    def __init__(
+        self, n_arms: int, T: int, d: int = None, arm: np.array = None
+    ) -> None:
         super().__init__(n_arms, T, d)
 
         if arm is None:
@@ -181,7 +179,6 @@ class Fixed(CombinatorialLearner):
 
 
 class CRandom(CombinatorialLearner):
-
     def __init__(self, n_arms: int, T: int, d: int = None) -> None:
         super().__init__(n_arms, T, d)
 
@@ -199,7 +196,7 @@ class CRandom(CombinatorialLearner):
 if __name__ == "__main__":
     T = 100000
     E = 10
-    #arms = [0.49, 0.67, 0.35, 0.90]
+    # arms = [0.49, 0.67, 0.35, 0.90]
     arms = np.random.normal(0, 1, 50)
     n_arms = len(arms)
     var = (1) ** 2
@@ -273,9 +270,24 @@ if __name__ == "__main__":
 
     # ----- Regrets -----
     ax1 = pl.subplot(gs[0, :])
-    ax1.plot(x, np.mean(np.cumsum(grl_experiments_regrets, axis=1), axis=0), color=GRL_COLOR, label=GRL_LABEL)
-    ax1.plot(x, np.mean(np.cumsum(egl_experiments_regrets, axis=1), axis=0), color=EGL_COLOR, label=EGL_LABEL)
-    ax1.plot(x, np.mean(np.cumsum(ucb_experiments_regrets, axis=1), axis=0), color=UCB_COLOR, label=UCB_LABEL)
+    ax1.plot(
+        x,
+        np.mean(np.cumsum(grl_experiments_regrets, axis=1), axis=0),
+        color=GRL_COLOR,
+        label=GRL_LABEL,
+    )
+    ax1.plot(
+        x,
+        np.mean(np.cumsum(egl_experiments_regrets, axis=1), axis=0),
+        color=EGL_COLOR,
+        label=EGL_LABEL,
+    )
+    ax1.plot(
+        x,
+        np.mean(np.cumsum(ucb_experiments_regrets, axis=1), axis=0),
+        color=UCB_COLOR,
+        label=UCB_LABEL,
+    )
     ax1.legend()
     ax1.set_title("Cumulative Regret")
     ax1.set_xlabel("t")

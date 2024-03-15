@@ -5,8 +5,8 @@ import hashlib
 import copy
 import abc
 
-class Env():
 
+class Env:
     def __init__(self, arms: List[float]) -> None:
         self.arms = arms
         self.K = len(arms)
@@ -36,8 +36,7 @@ class Env():
 
 
 class GaussianEnv(Env):
-
-    def __init__(self, arms: List[float], sigma: float = .1) -> None:
+    def __init__(self, arms: List[float], sigma: float = 0.1) -> None:
         super().__init__(arms)
         self.sigma = sigma
 
@@ -81,10 +80,8 @@ class GaussianEnv(Env):
 
 
 class BernoulliEnv(Env):
-
     def __init__(self, arms: [float]) -> None:
         super().__init__(arms)
 
     def reward(self, arm):
         return 1 if np.random.random() < self.arms[arm] else 0
-

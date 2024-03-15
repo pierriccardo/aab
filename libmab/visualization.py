@@ -2,18 +2,19 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 markers = ["o", "v", "*", "s", "h"]
-#red = "#ef476f"
-#blue = "#118ab2"
+# red = "#ef476f"
+# blue = "#118ab2"
+
 
 class Colors:
     red = "#C1121F"
     blue = "#3A86FF"
-    green = "#76c893"#"#06d6a0"
+    green = "#76c893"  # "#06d6a0"
     orange = "#ffd166"
     dblue = "#073b4c"
 
 
-def plotci(ax, x, E, exps, color, label, marker='*'):
+def plotci(ax, x, E, exps, color, label, marker="*"):
     y = np.mean(np.cumsum(exps, axis=1), axis=0)
     ax.plot(
         x,
@@ -22,13 +23,13 @@ def plotci(ax, x, E, exps, color, label, marker='*'):
         label=label,
         marker=marker,
         markevery=len(x) // len(ax.get_xticks()),
-        rasterized=True
+        rasterized=True,
     )
     ci = 1.96 * np.std(np.cumsum(exps, axis=1), axis=0) / np.sqrt(E)
     ax.fill_between(x, (y - ci), (y + ci), color=color, alpha=0.1)
 
 
-def plotconfint(ax, x, y, n_exps, color, label, marker='*'):
+def plotconfint(ax, x, y, n_exps, color, label, marker="*"):
     ax.plot(
         x,
         y,
@@ -36,7 +37,7 @@ def plotconfint(ax, x, y, n_exps, color, label, marker='*'):
         label=label,
         marker=marker,
         markevery=len(x) // len(ax.get_xticks()),
-        rasterized=True
+        rasterized=True,
     )
     ci = 1.96 * np.std(y, axis=0) / np.sqrt(n_exps)
     ax.fill_between(x, (y - ci), (y + ci), color=color, alpha=0.1)
@@ -51,7 +52,6 @@ def getconfint(exps, n_exps):
     ci = 1.96 * np.std(exps, axis=0) / np.sqrt(n_exps)
     y = np.mean(exps, axis=0)
     return y, (y - ci), (y + ci)
-
 
 
 def bar_plot(ax, data, colors=None, total_width=0.8, single_width=1, legend=True):

@@ -7,9 +7,9 @@ import numpy as np
 
 E = 10
 T = 10**5
-arms = [.2, .5, .4, .6, .23, .34]
+arms = [0.2, 0.5, 0.4, 0.6, 0.23, 0.34]
 K = len(arms)
-sigma = .5
+sigma = 0.5
 
 # ------------------------------
 # Parameters
@@ -20,7 +20,7 @@ opt_arm = arms[env.opt_arm()]
 
 bandits = [
     UCB(K, T, sigma=sigma),
-    EpsilonGreedy(K, T, epsilon=lambda x: .05),
+    EpsilonGreedy(K, T, epsilon=lambda x: 0.05),
 ]
 
 regrets = np.zeros((len(bandits), E, T))
@@ -57,7 +57,7 @@ ax.legend()
 ax.set_title("Cumulative Regret")
 ax.set_xlabel("t")
 ax.set_ylabel("regret")
-ax.grid(True, ls='--', lw=.5)
+ax.grid(True, ls="--", lw=0.5)
 plt.show()
 
 # ----- Rewards -----
@@ -70,5 +70,5 @@ ax.legend()
 ax.set_title("Cumulative Rewards")
 ax.set_xlabel("t")
 ax.set_ylabel("Reward")
-ax.grid(True, ls='--', lw=.5)
+ax.grid(True, ls="--", lw=0.5)
 plt.show()

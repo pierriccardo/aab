@@ -16,7 +16,7 @@ T = 10**5
 D = 1.1
 arms = [D, 0.0]  # true arm means
 n_arms = len(arms)
-sigma = .1
+sigma = 0.1
 var = sigma**2
 opt_mean = np.max(arms)
 
@@ -24,7 +24,7 @@ opt_mean = np.max(arms)
 # attack
 target = np.argmin(arms)  # target arm
 delta = 0.05
-epsilon = .15  # oracle attack ε param
+epsilon = 0.15  # oracle attack ε param
 
 alpha = epsilon / (D + epsilon)
 
@@ -66,8 +66,8 @@ for e in tqdm(range(E)):
 
     # attackers
     ora = OracleAttacker(n_arms, target, arms, epsilon)
-    ace = ACEAttacker(n_arms, target, var, delta=.5)
-    jun = UCBJunAttacker(n_arms, target, var, delta=.5, delta0=.5)
+    ace = ACEAttacker(n_arms, target, var, delta=0.5)
+    jun = UCBJunAttacker(n_arms, target, var, delta=0.5, delta0=0.5)
 
     for t in range(T):
         # arm selection
@@ -136,7 +136,8 @@ attcost_ace = np.mean(np.sum(ace_experiments_attacks, axis=1), axis=0)
 attcost_jun = np.mean(np.sum(jun_experiments_attacks, axis=1), axis=0)
 
 
-print(f"""
+print(
+    f"""
     time start = {tstart}
 
     Attack cost:
@@ -154,7 +155,8 @@ print(f"""
         ACE    : {regrets_ace / attcost_ace}
         JunUCB : {regrets_jun / attcost_jun}
 
-      """)
+      """
+)
 
 EXT = "png"
 SAVEPATH = "exps_icml24/baselines"
@@ -174,36 +176,65 @@ plotci(ax1, x, E, ucb_ora_experiments_regrets, Colors.blue, "UCB attacked Oracle
 plotci(ax1, x, E, ucb_ace_experiments_regrets, Colors.green, "UCB attacked ACE")
 plotci(ax1, x, E, ucb_jun_experiments_regrets, Colors.orange, "UCB attacked Jun UCB")
 ax1.axvline(tstart, color="r", ls="--", lw=".9")
-ax1.text(tstart - OFFSET, np.median(ax1.get_yticks()), f't\'={tstart}', color="r", ha='right', va='center', fontsize=9, rotation='vertical')
+ax1.text(
+    tstart - OFFSET,
+    np.median(ax1.get_yticks()),
+    f"t'={tstart}",
+    color="r",
+    ha="right",
+    va="center",
+    fontsize=9,
+    rotation="vertical",
+)
 ax1.legend()
 ax1.set_title("Cumulative Regret")
 ax1.set_xlabel("t")
 ax1.set_ylabel("regret")
-ax1.grid(True, ls='--', lw=.5)
+ax1.grid(True, ls="--", lw=0.5)
 fig_regrets.savefig(
     f"{SAVEPATH}/baselines_regrets.{EXT}",
-    bbox_inches='tight',
+    bbox_inches="tight",
     pad_inches=0.05,
-    orientation='landscape'
+    orientation="landscape",
 )
 
 # ----- Rewards -----
 ax2 = fig_rewards.add_subplot(111)
-ax2.plot(x, np.mean(np.cumsum(ucb_not_experiments_rewards, axis=1), axis=0), color=Colors.red, label="UCB normal")
-ax2.plot(x, np.mean(np.cumsum(ucb_ora_experiments_rewards, axis=1), axis=0), color=Colors.blue, label="UCB attacked Oracle")
-ax2.plot(x, np.mean(np.cumsum(ucb_ace_experiments_rewards, axis=1), axis=0), color=Colors.green, label="UCB attacked ACE")
-ax2.plot(x, np.mean(np.cumsum(ucb_jun_experiments_rewards, axis=1), axis=0), color=Colors.orange, label="UCB attacked Jun UCB")
+ax2.plot(
+    x,
+    np.mean(np.cumsum(ucb_not_experiments_rewards, axis=1), axis=0),
+    color=Colors.red,
+    label="UCB normal",
+)
+ax2.plot(
+    x,
+    np.mean(np.cumsum(ucb_ora_experiments_rewards, axis=1), axis=0),
+    color=Colors.blue,
+    label="UCB attacked Oracle",
+)
+ax2.plot(
+    x,
+    np.mean(np.cumsum(ucb_ace_experiments_rewards, axis=1), axis=0),
+    color=Colors.green,
+    label="UCB attacked ACE",
+)
+ax2.plot(
+    x,
+    np.mean(np.cumsum(ucb_jun_experiments_rewards, axis=1), axis=0),
+    color=Colors.orange,
+    label="UCB attacked Jun UCB",
+)
 ax2.axvline(tstart, color="r", ls="--", lw=".9", label="t'")
 ax2.legend()
 ax2.set_title("Cumulative Rewards")
 ax2.set_xlabel("t")
 ax2.set_ylabel("Reward")
-ax2.grid(True, ls='--', lw=.5)
+ax2.grid(True, ls="--", lw=0.5)
 fig_rewards.savefig(
     f"{SAVEPATH}/baselines_rewards.{EXT}",
-    bbox_inches='tight',
+    bbox_inches="tight",
     pad_inches=0.05,
-    orientation='landscape'
+    orientation="landscape",
 )
 
 # ----- Attack cost -----
@@ -217,12 +248,12 @@ ax3.set_title("Cumulative Attack Cost")
 ax3.set_xlabel("t")
 ax3.set_ylabel("Attack cost")
 ax3.set_xscale("log")
-ax3.grid(True, ls='--', lw=.5)
+ax3.grid(True, ls="--", lw=0.5)
 fig_attacks.savefig(
     f"{SAVEPATH}/baselines_attacks.{EXT}",
-    bbox_inches='tight',
+    bbox_inches="tight",
     pad_inches=0.05,
-    orientation='landscape'
+    orientation="landscape",
 )
 
 # ----- Arm pulls -----
@@ -233,24 +264,21 @@ data = {
     "UCB ACE attacked": np.mean(ucb_ace_arms_pulled, axis=0),
     "UCB Jun attacked": np.mean(ucb_jun_arms_pulled, axis=0),
 }
-colors = [
-    Colors.red,
-    Colors.blue,
-    Colors.green,
-    Colors.orange
-]
+colors = [Colors.red, Colors.blue, Colors.green, Colors.orange]
 bar_plot(ax4, data, colors=colors, total_width=0.8, single_width=0.9)
 ax4.set_yscale("log")
 ax4.set_title("Arm pulls")
 ax4.set_xlabel("Arms")
 ax4.set_ylabel("Times Pulled")
 ax4.set_xticks([*range(n_arms)])
-ax4.set_xticklabels([f"arm {a}" if a != target else f"arm {a} (target)" for a in range(n_arms)])
-ax4.grid(True, ls='--', lw=.5)
+ax4.set_xticklabels(
+    [f"arm {a}" if a != target else f"arm {a} (target)" for a in range(n_arms)]
+)
+ax4.grid(True, ls="--", lw=0.5)
 fig_armpull.savefig(
     f"{SAVEPATH}/baselines_armpull.{EXT}",
-    bbox_inches='tight',
+    bbox_inches="tight",
     pad_inches=0.05,
-    orientation='landscape'
+    orientation="landscape",
 )
 plt.show()

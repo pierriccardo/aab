@@ -4,8 +4,7 @@ import numpy as np
 import abc
 
 
-class CombinatorialEnv():
-
+class CombinatorialEnv:
     def __init__(self, arms: np.ndarray, d: int = None) -> None:
         self.arms = arms
         self.K = len(arms)
@@ -34,9 +33,9 @@ class CombinatorialEnv():
             opt arm : {self.opt_arm()}
         """
 
-class CombinatorialGaussianEnv(CombinatorialEnv):
 
-    def __init__(self, arms: np.ndarray, sigma: float = .1, d: int = None) -> None:
+class CombinatorialGaussianEnv(CombinatorialEnv):
+    def __init__(self, arms: np.ndarray, sigma: float = 0.1, d: int = None) -> None:
         super().__init__(arms)
         self.sigma = sigma
         self.d = self.K if d is None else d
@@ -79,12 +78,12 @@ class CombinatorialGaussianEnv(CombinatorialEnv):
     def opt_arm(self) -> np.ndarray:
         opt = np.zeros(self.K)
         # find indexes of d maximum elements
-        idx = np.argpartition(self.arms, -self.d)[-self.d:]
+        idx = np.argpartition(self.arms, -self.d)[-self.d :]
         opt[idx] = 1
         return opt
 
 
-class PMCEnv():
+class PMCEnv:
 
     """Probabilistic Maximum Coverage (PMC)
     This environment simulate a PMC problem where given a bipartite graph G(L, R, E) a learner
@@ -92,7 +91,7 @@ class PMCEnv():
     the activation of vertices in R.
     """
 
-    def __init__(self, bgraph: dict,  d: int = None) -> None:
+    def __init__(self, bgraph: dict, d: int = None) -> None:
         # TODO: refactor graph class to handle bot graph for online-shortest-path
         # and bipartite graph.
         # TODO: consider using networkx
@@ -127,7 +126,7 @@ class PMCEnv():
         # with probability p(v, u)
         for idx, v in enumerate(self.L):
             for p in self.P[v]:
-                #reward[idx] += np.random.binomial(1, p)
+                # reward[idx] += np.random.binomial(1, p)
                 reward[idx] += np.random.normal(p, 2)
         return reward * arm
 
@@ -138,7 +137,7 @@ class PMCEnv():
 
         opt = np.zeros(len(self.L))
         # find indexes of d maximum elements
-        idx = np.argpartition(means, -self.d)[-self.d:]
+        idx = np.argpartition(means, -self.d)[-self.d :]
         opt[idx] = 1
         return opt
 
@@ -209,9 +208,7 @@ class Graph:
         return s
 
 
-class OnlineShortestPathEnv():
-
+class OnlineShortestPathEnv:
     def __init__(self) -> None:
         # TODO: to be implemented
         pass
-

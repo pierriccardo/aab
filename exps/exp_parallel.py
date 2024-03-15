@@ -8,7 +8,7 @@ import numpy as np
 
 E = 10
 T = 10**5
-arms = [.2, .5, .4, .6, .23, .34]
+arms = [0.2, 0.5, 0.4, 0.6, 0.23, 0.34]
 K = len(arms)
 sigma = 1.1
 
@@ -44,14 +44,13 @@ def trial(e, regrets, rewards, armpull):
             regrets[b_id, e, t] = opt_arm - arms[arm]
             armpull[b_id, e, arm] += 1
     for b in bandits:
-        print("="*100)
-        print(" "*45 + f"E = {e}" + " " * 45)
-        print("="*100)
+        print("=" * 100)
+        print(" " * 45 + f"E = {e}" + " " * 45)
+        print("=" * 100)
         print(b)
 
 
 if __name__ == "__main__":
-
     for e in range(E):
         p = Process(target=trial, args=(e, regrets, rewards, armpull))
         p.start()
@@ -73,7 +72,7 @@ if __name__ == "__main__":
     ax.set_title("Cumulative Regret")
     ax.set_xlabel("t")
     ax.set_ylabel("regret")
-    ax.grid(True, ls='--', lw=.5)
+    ax.grid(True, ls="--", lw=0.5)
     plt.show()
 
     # ----- Rewards -----
@@ -86,7 +85,7 @@ if __name__ == "__main__":
     ax.set_title("Cumulative Rewards")
     ax.set_xlabel("t")
     ax.set_ylabel("Reward")
-    ax.grid(True, ls='--', lw=.5)
+    ax.grid(True, ls="--", lw=0.5)
     plt.show()
 
 

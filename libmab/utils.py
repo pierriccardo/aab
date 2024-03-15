@@ -4,7 +4,10 @@ import numpy as np
 import sys
 import os
 
-def save(names: List[str], data: List[np.array], labels: List[List[str]], expname: str = None) -> None:
+
+def save(
+    names: List[str], data: List[np.array], labels: List[List[str]], expname: str = None
+) -> None:
     expname = expname or sys.argv[0][:-3]
     os.makedirs(expname, exist_ok=True)
 

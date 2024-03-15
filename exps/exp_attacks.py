@@ -8,7 +8,7 @@ import numpy as np
 
 E = 10
 T = 10**5
-arms = [.2, .5, .4, .6, .23, .34]
+arms = [0.2, 0.5, 0.4, 0.6, 0.23, 0.34]
 K = len(arms)
 sigma = 1.1
 
@@ -20,16 +20,12 @@ env = GaussianEnv(arms, sigma)
 opt_arm = arms[env.opt_arm()]
 target = np.argmin(arms)
 
-bandits = [
-    UCB(K, T, sigma=sigma),
-    EpsilonGreedy(K, T),
-    UCB(K, T, sigma=sigma)
-]
+bandits = [UCB(K, T, sigma=sigma), EpsilonGreedy(K, T), UCB(K, T, sigma=sigma)]
 
 attackers = [
-    OracleAttacker(K, T, target, arms, epsilon=.05),
-    OracleAttacker(K, T, target, arms, epsilon=.05),
-    None
+    OracleAttacker(K, T, target, arms, epsilon=0.05),
+    OracleAttacker(K, T, target, arms, epsilon=0.05),
+    None,
 ]
 
 B = len(bandits)
@@ -53,7 +49,7 @@ for e in tqdm(range(E)):
             regrets[b_id, e, t] = opt_arm - arms[arm]
             armpull[b_id, e, arm] += 1
 
-    for (b, a) in zip(bandits, attackers):
+    for b, a in zip(bandits, attackers):
         b.reset()
         if a is not None:
             a.reset()
@@ -72,7 +68,7 @@ ax.legend()
 ax.set_title("Cumulative Regret")
 ax.set_xlabel("t")
 ax.set_ylabel("regret")
-ax.grid(True, ls='--', lw=.5)
+ax.grid(True, ls="--", lw=0.5)
 plt.show()
 
 # ----- Rewards -----
@@ -85,5 +81,5 @@ ax.legend()
 ax.set_title("Cumulative Rewards")
 ax.set_xlabel("t")
 ax.set_ylabel("Reward")
-ax.grid(True, ls='--', lw=.5)
+ax.grid(True, ls="--", lw=0.5)
 plt.show()
