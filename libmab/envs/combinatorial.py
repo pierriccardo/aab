@@ -82,6 +82,55 @@ class CombinatorialGaussianEnv(CombinatorialEnv):
         opt[idx] = 1
         return opt
 
+class CombinatorialBoundedGaussianEnv(CombinatorialEnv):
+    def __init__(self, arms: np.ndarray, sigma: float = 0.1, d: int = None) -> None:
+        super().__init__(arms)
+        self.sigma = sigma
+        self.d = self.K if d is None else d
+
+    def reward(self, arm: np.array) -> np.array:
+        return np.random.binomial(np.ones(self.K, dtype=int), self.arms) * arm
+
+    def rewardvec(self, e: int, t: int, seed: int = 0) -> np.ndarray:
+        """When comparing different algorithms on the same environment
+        it is important to ensure that are compared on the same instance
+        generating the reward vector beforehand, seeded with exp. number
+        and current round can be seen as precomputing the whole reward
+        table (E x T) and draw at each round the correct vector
+
+        Parameters
+        ----------
+        e : int
+            current experiment number e in E
+        t : int
+            current round number t in T
+        seed : int, optional
+            an additional seed, by default 0
+
+        Returns
+        -------
+        List[float]
+            Reward realization vector for exp. num e and
+            round t.
+        """
+
+        # to achieve a repeatable random state we double
+        # seed the generator with experiment and round num
+
+        rng = np.random.default_rng(hash((e, t)) & 0xFFFFFFFF)
+
+        return rng.binomial(np.ones(self.K, dtype=int), self.arms)
+
+    def pseudo_reward(self, arm: np.array) -> np.array:
+        return self.arms * arm
+
+    def opt_arm(self) -> np.ndarray:
+        opt = np.zeros(self.K)
+        # find indexes of d maximum elements
+        idx = np.argpartition(self.arms, -self.d)[-self.d :]
+        opt[idx] = 1
+        return opt
+
 
 class PMCEnv:
 

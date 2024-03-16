@@ -107,6 +107,7 @@ class CombinatorialLearner(Learner):
         # superarm  shape (n_arms,)
         # superarm is a vector {0, 1}^n_arms
         self.rewards[self.t, :] = reward
+        #print(f'n {self.__class__.__name__[:2]} t={self.t} arm_pulls {self.arm_pulls} estimates {self.estimates}')
         self.estimates = (self.estimates * self.arm_pulls + reward) / (
             self.arm_pulls + superarm
         )
@@ -153,7 +154,7 @@ class CUCB(CombinatorialLearner):
             return superarm
 
         exploration = np.log(self.t) / self.arm_pulls
-        exploration = 3 * self.sigma * np.sqrt(exploration)
+        exploration = 50 * self.sigma * np.sqrt(exploration)
         ucb_arms = np.add(self.estimates, exploration)
 
         return self.oracle(ucb_arms, self.d)

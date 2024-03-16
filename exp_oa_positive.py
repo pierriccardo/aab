@@ -1,6 +1,6 @@
 from libmab.learners import CUCB, CRandom, Fixed
-from libmab.attackers import OracleCombinatorialAttacker, TOCAttacker
-from libmab.envs.combinatorial import CombinatorialGaussianEnv
+from libmab.attackers import OracleCombinatorialBoundedAttacker
+from libmab.envs.combinatorial import CombinatorialBoundedGaussianEnv
 from libmab.visualization import Colors
 from libmab.utils import save
 from tqdm import tqdm
@@ -15,23 +15,20 @@ import os
 # Parameters
 # ------------------------------
 np.random.seed(123)
-name = "oracle_positive"
-E = 1
-T = 10**6
+name = "oracle_bounded"
+E = 2
+T = 10**5
 #arms = np.array([0.11, 0.24, 0.35, 0.33, 0.12, 0.21, 0.15, 0.14])
 arms = np.array([.5, .5, .1, .1])
 #target = np.array([1, 0, 0, 0, 1, 0, 1, 1])
 target = np.array([0, 0, 1, 1])
 K = len(arms)
 d = int(np.sum(target))
-print(d)
 sigma = 0.1
 epsilon = 0.1
-delta = 0.05
-delta0 = 0.05
 
 
-env = CombinatorialGaussianEnv(arms, sigma=sigma, d=d)
+env = CombinatorialBoundedGaussianEnv(arms, sigma=sigma, d=d)
 
 
 def oracle(estimates, d):
@@ -44,19 +41,16 @@ def oracle(estimates, d):
 bandits = [
     CUCB(K, T, oracle, sigma=sigma, d=d),
     CUCB(K, T, oracle, sigma=sigma, d=d),
-    CUCB(K, T, oracle, sigma=sigma, d=d),
 ]
 
 labels = [
     "CUCB",
     "Oracle Attacked CUCB",
-    "Attacked CUCB"
 ]
 
 attackers = [
     None,
-    OracleCombinatorialAttacker(K, T, target, arms, d=d, epsilon=epsilon),
-    TOCAttacker(K, T, target, sigma=sigma, delta=delta, delta0=delta0),
+    OracleCombinatorialBoundedAttacker(K, T, target, arms, d=d, epsilon=epsilon),
 ]
 
 regrets = np.zeros((len(bandits), E, T))
@@ -74,8 +68,8 @@ for e in tqdm(range(E)):
             attack = (
                 attacker.attack(reward, arm) if attacker is not None else np.zeros(K)
             )
-            if b_id == 2:
-                print(f"{bandit.__class__.__name__} {arm} {attack}")
+            #if b_id == 2:
+            #    print(f"{bandit.__class__.__name__} {arm} {attack}")
             bandit.update(reward - attack, arm)
 
             #  update data for visualization

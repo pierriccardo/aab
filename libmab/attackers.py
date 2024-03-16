@@ -153,20 +153,51 @@ class OracleCombinatorialAttacker(CombinatorialAttacker):
         T: int,
         target: np.ndarray,
         means: np.ndarray,
+        d: int = None,
         epsilon: float = 0.05,
     ) -> None:
         super().__init__(n_arms, T, target)
+        self.d = d if d is not None else self.n_arms
         self.means = means
         self.epsilon = epsilon
 
         self.lowest_target_mean = np.min(self.means[self.target == 1])
         self.len_target = len(self.target[self.target == 1])
-        self.gap = self.lowest_target_mean / (self.n_arms - self.len_target + 1)
+        self.gap = self.lowest_target_mean / (self.d - self.len_target + 1)
 
     def attack(self, reward: np.ndarray, arm: np.ndarray) -> np.ndarray:
         self.update(reward, arm)
         corruption = np.array([self.gap - self.epsilon for _ in range(self.n_arms)])
         corruption = self.means - corruption
+        # here the ^1 is to negate the target, to attack only arms
+        # that are not in the target arm
+        corruption = corruption * (self.target ^ 1) * arm
+
+        return corruption
+
+class OracleCombinatorialBoundedAttacker(CombinatorialAttacker):
+    def __init__(
+        self,
+        n_arms: int,
+        T: int,
+        target: np.ndarray,
+        means: np.ndarray,
+        d: int = None,
+        epsilon: float = 0.05,
+    ) -> None:
+        super().__init__(n_arms, T, target)
+        self.d = d if d is not None else self.n_arms
+        self.means = means
+        self.epsilon = epsilon
+
+        self.lowest_target_mean = np.min(self.means[self.target == 1])
+        self.len_target = len(self.target[self.target == 1])
+        self.gap = self.lowest_target_mean / (self.d - self.len_target + 1)
+
+    def attack(self, reward: np.ndarray, arm: np.ndarray) -> np.ndarray:
+        self.update(reward, arm)
+        corruption = np.array([self.gap - self.epsilon for _ in range(self.n_arms)])
+        corruption = reward - corruption
         # here the ^1 is to negate the target, to attack only arms
         # that are not in the target arm
         corruption = corruption * (self.target ^ 1) * arm
@@ -201,15 +232,20 @@ class TOCAttacker(CombinatorialAttacker):
         )
 
     def attack(self, reward: np.ndarray, arm: np.ndarray) -> np.ndarray:
+        if self.t <= self.n_arms:
+            self.update(reward, arm)
+            return np.zeros(self.n_arms)
+
         lowest_target_idx = np.argmin(self.estimates[self.target == 1])
         lowest_pulled_arm = max(np.min(self.arm_pulls[self.target == 1]), 2)
 
-
-        constant_corruption = -self.len_target * np.abs(
-            self.estimates[lowest_target_idx]
-        )
-        constant_corruption += -self.len_target * self.beta(1000)
-        constant_corruption += -3 * self.sigma * np.sqrt(np.log(self.T)) - self.delta0
+        constant_corruption = self.estimates[lowest_target_idx] / (self.d - self.len_target + 1)
+        #constant_corruption = -self.len_target * np.abs(
+        #    self.estimates[lowest_target_idx]
+        #)
+        constant_corruption += -self.len_target * self.beta(lowest_pulled_arm)
+        #constant_corruption += -30 * self.sigma * np.sqrt(np.log(self.t)) - self.delta0
+        constant_corruption += - self.delta0
 
         # compute arm pulls at t, adding current selection
         arm_pulls = self.arm_pulls + arm
